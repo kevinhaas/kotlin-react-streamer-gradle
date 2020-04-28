@@ -5,6 +5,8 @@
 An experiment using Kotlin to target the browser. Transpiles Kotlin to JS, and includes  
 the [`kotlin-react` wrappers](https://github.com/JetBrains/kotlin-wrappers/tree/master/kotlin-react).
 
+Next step will be looking into KotlinJS/React Native/Kotlin Multiplatform.
+
 `npm start` for webpack-dev-server  
 `npm run build` for prod bundle
 

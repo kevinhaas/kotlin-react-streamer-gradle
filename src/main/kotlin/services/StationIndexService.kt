@@ -1,44 +1,43 @@
 package services
 
+import kotlin.browser.window
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.await
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.list
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import org.w3c.fetch.RequestInit
 import view.index.API_SERVERS_URL
+import view.index.CORS_PROXY_URL
+import view.index.DEFAULT_HEADERS
 import view.index.model.Result
 import view.index.model.StationIndex
-import kotlin.browser.window
-import kotlin.coroutines.CoroutineContext
-import kotlin.js.json
 
 // Station index is used as the API endpoint for all requests
-class StationIndexService(private val coroutineContext: CoroutineContext) {
-    //TODO: Make serializer easily accessible by other services
-    private val serializer = Json(JsonConfiguration.Stable)
-
-    //TODO: Handle retrying:
-    //  when(response.status) {
-    //      in 200..299 ->
-    //      else -> retry
-    //  }
-    suspend fun getRandomStationIndex(): Result {
+class StationIndexService(private val coroutineContext: CoroutineContext, private val jsonSerializer: Json) {
+    suspend fun getAvailableStationIndex(): StationIndex {
         val (response, serversJson) = fetchStationIndexes()
-        return Result(
-            response,
-            serializer.parse(StationIndex.serializer().list, serversJson).random()
-        )
+
+        // Can't get any station indexes
+        if (response.status !in 200..299) {
+            throw Throwable(response.statusText)
+        }
+
+        val stationIndexes = jsonSerializer.parse(StationIndex.serializer().list, serversJson)
+
+        // Get the first station index that responds successfully
+        return stationIndexes.first {
+            window.fetch("${CORS_PROXY_URL}http://${it.url}/stats", RequestInit(
+                    "GET"
+            )).await().status in 200..399
+        }
     }
 
-    private suspend fun fetchStationIndexes(url: String = API_SERVERS_URL): Result
-        = withContext(coroutineContext) {
+    private suspend fun fetchStationIndexes(url: String = API_SERVERS_URL): Result =
+        withContext(coroutineContext) {
             val response = window.fetch(url, RequestInit(
                 "GET",
-                headers = json(
-                    "Accept" to "application/json",
-                    "Content-Type" to "application/json"
-                )
+                DEFAULT_HEADERS
             )).await()
 
             return@withContext Result(

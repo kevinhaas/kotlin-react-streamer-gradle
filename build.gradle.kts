@@ -1,6 +1,7 @@
 plugins {
     kotlin("js") version "1.3.72"
     kotlin("plugin.serialization") version "1.3.72"
+    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
 }
 
 version = "1.0-SNAPSHOT"
@@ -32,3 +33,13 @@ dependencies {
 }
 
 kotlin.target.browser { }
+
+ktlint {
+    verbose.set(true)
+    outputToConsole.set(true)
+
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.JSON)
+    }
+}
